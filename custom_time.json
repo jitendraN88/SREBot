@@ -1,0 +1,26 @@
+{
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "type": "AdaptiveCard",
+    "version": "1.0",
+    "body": [
+        {
+            "type": "Input.Date",
+            "id": "start_date",
+            "placeholder": "Enter start date",
+            "value": "03-05-2024 10:30"
+          },
+          {
+            "type": "Input.Date",
+            "id": "end_date",
+            "placeholder": "Enter end date",
+            "value": "03-05-2024 12:30"
+          }
+    ],
+    "actions": [
+      {
+        "type": "Action.Submit",
+        "title": "OK"
+      }
+    ]
+  }
+  
