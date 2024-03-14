@@ -39,8 +39,16 @@ class TeamsConversationBot(TeamsActivityHandler):
     async def on_message_activity(self, turn_context: TurnContext):
         TurnContext.remove_recipient_mention(turn_context.activity)
         text = turn_context.activity.text.strip().lower()
-        print("text from teams is ---", text)
-
+        # if turn_context.activity.text is not None: text = turn_context.activity.text.strip().lower()
+        # else:
+        #         text = turn_context.activity.value['action']
+        #         print("text from teams is ---", turn_context.activity.value['action']) 
+        
+        if "|path" in text:
+            print("text from teams is ---", text.split("|path")[0]) 
+            # await self._get_path_statistics(turn_context, text)
+            return
+        
         if "|time" in text and "/" in text:
             await self._get_path_statistics(turn_context, text)
             return

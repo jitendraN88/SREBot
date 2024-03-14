@@ -115,7 +115,10 @@ class SplunkOperations():
                                     "border": True,
                                     "actions": [{
                                         "type": "Action.Submit",
-                                        "title": line["Request_path"]
+                                        "title": line["Request_path"],
+                                        "data": {
+                                            "action": line["Request_path"] + '|path'
+                                        }
                                     }]
                                 }]
                             }]
