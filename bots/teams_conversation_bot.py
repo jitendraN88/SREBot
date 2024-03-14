@@ -45,7 +45,7 @@ class TeamsConversationBot(TeamsActivityHandler):
             await self._get_path_statistics(turn_context, text)
             return
 
-        if "/" in text:
+        if "gettrends" in text:
             await self._get_path_statistics_timeframe(turn_context, text)
             return
 
@@ -63,7 +63,7 @@ class TeamsConversationBot(TeamsActivityHandler):
             return
 
         if "update" in text:
-            await self._send_card(turn_context, True)
+            await self._send_card(turn_context, False)
             return
 
         if "message" in text:
@@ -85,8 +85,12 @@ class TeamsConversationBot(TeamsActivityHandler):
         if "get4xx" in text:
             await self._send_incident_card_4xx(turn_context, False)
             return
+        
+        if "getincidenttrends" in text:
+            await self._send_incident_card_trends(turn_context, False)
+            return
 
-        await self._send_card(turn_context, False)
+        await self._send_select_region_card(turn_context, False)
         return
 
     async def _mention_adaptive_card_activity(self, turn_context: TurnContext, text):
@@ -120,15 +124,55 @@ class TeamsConversationBot(TeamsActivityHandler):
         reply_activity = MessageFactory.text(f"Hello {mention.text}")
         reply_activity.entities = [Mention().deserialize(mention.serialize())]
         await turn_context.send_activity(reply_activity)
-
+    
+    async def _send_select_region_card(self, turn_context: TurnContext, isUpdate):
+        buttons = [
+            CardAction(
+                type=ActionTypes.message_back, title="North America", text="getincidents"
+            ),
+            CardAction(
+                 type=ActionTypes.message_back, title="APAC", text="getincidents"
+            ),
+            CardAction(
+                 type=ActionTypes.message_back, title="EMEA", text="getincidents"
+            )
+        ]
+        if isUpdate:
+            await self._send_update_card(turn_context, buttons)
+        else:
+            await self._send_welcome_card(turn_context, buttons)
+    
     async def _send_card(self, turn_context: TurnContext, isUpdate):
         buttons = [
             CardAction(
-                type=ActionTypes.message_back, title="Akamai 5xx", text="getincidents"
+                type=ActionTypes.message_back, title="Akamai", text="getincidenttrends"
             ),
-            # CardAction(
-            #     type=ActionTypes.message_back, title="Akamai 4xx", text="get4xx"
-            # ),
+            CardAction(
+                type=ActionTypes.message_back, title="Moovweb", text="getincidenttrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="SFCC", text="getincidenttrends"
+            ),
+        ]
+        if isUpdate:
+            await self._send_update_card(turn_context, buttons)
+        else:
+            await self._send_welcome_card(turn_context, buttons)
+
+    async def _send_incident_card_trends(self, turn_context: TurnContext, isUpdate):
+        buttons = [
+            CardAction(
+                type=ActionTypes.message_back, title="Stability", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Errors (4XX)", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Errors (5XX)", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Maintenance Page Trend", text="gettrends"
+            )
         ]
         if isUpdate:
             await self._send_update_card(turn_context, buttons)
@@ -138,9 +182,10 @@ class TeamsConversationBot(TeamsActivityHandler):
     async def _send_incident_card(self, turn_context: TurnContext, isUpdate):
         buttons = [
             CardAction(
-                type=ActionTypes.message_back,
-                title="coachoutlet.com",
-                text="coachoutlet.com",
+                type=ActionTypes.message_back, title="coachoutlet.com", text="update",
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="katespadeoutlet.com", text="update",
             ),
         ]
         if isUpdate:
@@ -200,6 +245,7 @@ class TeamsConversationBot(TeamsActivityHandler):
 
     async def _get_path_statistics_timeframe(self, turn_context: TurnContext, path):
         buttons = [
+            CardAction(type=ActionTypes.message_back, title="15mins", text=path + "|time-15m", ),
             CardAction(type=ActionTypes.message_back, title="30mins", text=path + "|time-30m", ),
             CardAction(type=ActionTypes.message_back, title="1 Hour", text=path + "|time-1h", ),
             CardAction(type=ActionTypes.message_back, title="4 Hours", text=path + "|time-4h", ),
