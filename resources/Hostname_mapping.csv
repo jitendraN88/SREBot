@@ -1,0 +1,21 @@
+"Request_host",currency,"currency_symbol",label,"lambda_src_path","mw_acc_num","mw_eid",region,"region_label",site,"site_alerts_status","siteoutage_alerts_status"
+"ca.coachoutlet.com",CAD,CAD,"Coach CA Outlet","s3://xdn-access-logs-357104192119/","*","ba27bb38-977c-49be-a1e5-444f0320bcfe",NA,"North America","coh_ca_out",enable,enable
+"ca.coach.com",CAD,CAD,"Coach CA Retail","s3://xdn-access-logs-291659517497/","*","613daf39-3a58-4520-a0d6-277bc7604fc7",NA,"North America","coh_ca_rt",enable,enable
+"japan.coachoutlet.com",JPY,"¥","Coach JP Outlet","s3://xdn-access-logs-973533771991/","*","bb811d75-8b34-418b-9252-d26e2d1bf184",APAC,APAC,"coh_jp_out",enable,enable
+"japan.coach.com",JPY,"¥","Coach JP Retail","s3://xdn-access-logs-335583926569/","*","34d5e6fd-8af4-418f-9b62-412edc4e3813",APAC,APAC,"coh_jp_rt",enable,enable
+"www.coachoutlet.com",USD,"$","Coach US Outlet","s3://xdn-access-logs-708136893734/",209F0F,"51e697fb-fce0-4556-b211-1810a4297980",NA,"North America","coh_us_out",enable,enable
+"www.coach.com",USD,"$","Coach US Retail","s3://xdn-access-logs-457642562283/","*","05d176ca-aaa4-4348-885d-35f583e786eb",NA,"North America","coh_us_rt",enable,enable
+"www.katespade.jp",JPY,"¥","Kate Spade JP","s3://xdn-access-logs-246057519104/","*","f745ae0e-3a44-4d7f-9b41-ab284471d895",APAC,APAC,"ks_jp_rt",enable,enable
+"www.katespade.com",USD,"$","Kate Spade US Retail","s3://xdn-access-logs-243223630755/","*","d0ff0e5f-bef6-4c8e-8b59-3c7bb3f92b81",NA,"North America","ks_us_rt",enable,enable
+"www.katespadeoutlet.com",USD,"$","Kate Spade Outlet","s3://xdn-access-logs-854492459627/","*","37e15081-0aa4-4d71-a491-d1dc945eab87",NA,"North America","ks_us_sur",enable,enable
+"ca.stuartweitzman.com",CAD,CAD,"Stuart CA Retail","s3://xdn-access-logs-491587178652/","*","42aeb463-e731-4937-a12b-aa0569c278b3",NA,"North America","sw_ca_rt",enable,enable
+"www.stuartweitzman.com",USD,"$","Stuart US Retail","s3://xdn-access-logs-732174228553/","*","e67af1bf-c183-4a49-954b-f23becdb89cd",NA,"North America","sw_us_rt",enable,enable
+"uk.coach.com",GBP,"£","Coach UK Retail","s3://xdn-access-logs-115145984225/","*","f202e3e4-40e2-4b29-8161-ac0c5dd25e8c",EU,Europe,"coh_uk_rt",enable,enable
+"de.coach.com",EUR,"€","Coach DE Retail","s3://xdn-access-logs-595813784368/","*","c37ef725-c34d-4fd1-9907-8d06c64eecb9",EU,Europe,"coh_de_rt",enable,enable
+"fr.coach.com",EUR,"€","Coach FR Retail","s3://xdn-access-logs-057408813966/","*","f23534e4-3f83-409c-bdf9-761b7f526c04",EU,Europe,"coh_eu_rt",enable,enable
+"it.coach.com",EUR,"€","Coach IT Retail","s3://xdn-access-logs-057408813966/","*","7088e1ef-c010-45bf-80d6-49f8d337b4c5",EU,Europe,"coh_it_rt_dm",enable,enable
+"es.coach.com",EUR,"€","Coach ES Retail","s3://xdn-access-logs-057408813966/","*","3eca04f8-2a1c-48c0-90a9-5d6d4e9c879c",EU,Europe,"coh_es_rt_dm",enable,enable
+,USD,"$","Coach AB Test",,"*","be270f9e-b6d2-4fca-b19a-7a8aba3d5ee1",NA,"North America","Coh_us_rt_AB",enable,enable
+"www.katespade.co.uk",GBP,"£","Kate Spade EU UK","s3://xdn-access-logs-752215932376/","*","f58bf81d-a030-45ef-9d79-e515096e081e",EU,Europe,"ks_uk_rt",enable,enable
+"www.katespade.de",EUR,"€","Kate Spade Germany","s3://xdn-access-logs-405428886333/","*","ebc1c386-cc6d-4138-8d8f-871a42c4913a",EU,Europe,"ks_de_rt",enable,enable
+"www.katespade.eu",EUR,"€","Kate Spade Rest of Europe","s3://xdn-access-logs-185293301776/","*","80a02f2f-3b65-49c0-9750-a971ea68fc92",EU,Europe,"ks_eu_rt",enable,enable

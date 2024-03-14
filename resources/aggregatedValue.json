@@ -1,0 +1,38 @@
+{
+    "type": "AdaptiveCard",
+    "msteams": {"width": "Full"},
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.5",
+    "body": [
+
+        {
+            "type": "Table",
+            "columns": [
+                {
+                    "width": 2
+                }
+            ],
+            "rows": [
+                {
+                    "type": "TableRow",
+                    "cells": [
+                        {
+                            "type": "TableCell",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "Aggregated Value",
+                                    "wrap": true
+                                }
+                            ],
+                            "style": "accent",
+                            "horizontalAlignment": "Center",
+                            "verticalContentAlignment": "Center"
+                        }
+                    ]
+                }
+            ],
+            "showGridLines": false
+        }
+    ]
+}
