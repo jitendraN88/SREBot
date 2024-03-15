@@ -10,9 +10,11 @@ from botbuilder.core.teams import TeamsActivityHandler, TeamsInfo
 from botbuilder.schema import Attachment, AttachmentData, CardAction, HeroCard, Mention, ConversationParameters, CardImage, Activity, ActivityTypes
 from botbuilder.schema.teams import TeamInfo, TeamsChannelAccount
 from botbuilder.schema._connector_client_enums import ActionTypes
-from .splunk_operations import SplunkOperations
+from .splunk_operations import SplunkOperations 
+from .utils import Utils
 
 splunk = SplunkOperations()
+utils = Utils()
 ADAPTIVECARDTEMPLATE = "resources/SplunkStats.json"
 GRAPHADAPTIVECARDTEMPLATE = "resources/graph.json"
 
@@ -136,13 +138,13 @@ class TeamsConversationBot(TeamsActivityHandler):
     async def _send_select_region_card(self, turn_context: TurnContext, isUpdate):
         buttons = [
             CardAction(
-                type=ActionTypes.message_back, title="North America", text="getincidents"
+                type=ActionTypes.message_back, title="North America", text="getincidents|North America"
             ),
             CardAction(
-                 type=ActionTypes.message_back, title="APAC", text="getincidents"
+                 type=ActionTypes.message_back, title="APAC", text="getincidents|APAC"
             ),
             CardAction(
-                 type=ActionTypes.message_back, title="EMEA", text="getincidents"
+                 type=ActionTypes.message_back, title="Europe", text="getincidents|Europe"
             )
         ]
         if isUpdate:
@@ -153,22 +155,25 @@ class TeamsConversationBot(TeamsActivityHandler):
     async def _send_card(self, turn_context: TurnContext, isUpdate):
         buttons = [
             CardAction(
-                type=ActionTypes.message_back, title="Akamai", text="getincidenttrends"
+                type=ActionTypes.message_back, title="Akamai", text="getincidenttrends|Akamai"
             ),
             CardAction(
-                type=ActionTypes.message_back, title="Moovweb", text="getincidenttrends"
+                type=ActionTypes.message_back, title="Moovweb", text="getincidenttrends|Moovweb"
             ),
             CardAction(
-                type=ActionTypes.message_back, title="SFCC", text="getincidenttrends"
+                type=ActionTypes.message_back, title="SFCC", text="getincidenttrends|SFCC"
             ),
         ]
         if isUpdate:
             await self._send_update_card(turn_context, buttons)
         else:
-            await self._send_welcome_card(turn_context, buttons)
+            await self._send_welcome_card(turn_context, buttons, titleMsg="Hosts")
 
     async def _send_incident_card_trends(self, turn_context: TurnContext, isUpdate):
-        buttons = [
+        trend_name = turn_context.activity.text.split("|")[1]
+        buttons = []
+        if trend_name == 'Akamai':
+         buttons = [
             CardAction(
                 type=ActionTypes.message_back, title="Stability", text="gettrends"
             ),
@@ -181,38 +186,75 @@ class TeamsConversationBot(TeamsActivityHandler):
             CardAction(
                 type=ActionTypes.message_back, title="Maintenance Page Trend", text="gettrends"
             )
-        ]
+         ]
+        elif trend_name == 'Moovweb':
+          buttons = [
+            CardAction(
+                type=ActionTypes.message_back, title="Stability", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Latency", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Errors (4XX)", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Errors (5XX)", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Whoops Page Trend", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="PDP Errors", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="PLP Errors", text="gettrends"
+            )
+         ]
+        elif trend_name == 'SFCC':
+            buttons = [
+            CardAction(
+                type=ActionTypes.message_back, title="Stability", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Latency", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Errors (4XX)", text="gettrends"
+            ),
+            CardAction(
+                type=ActionTypes.message_back, title="Errors (5XX)", text="gettrends"
+            )
+         ] 
         if isUpdate:
             await self._send_update_card(turn_context, buttons)
         else:
-            await self._send_welcome_card(turn_context, buttons)
+            await self._send_welcome_card(turn_context, buttons, titleMsg="Show Incident Trends")
 
     async def _send_incident_card(self, turn_context: TurnContext, isUpdate):
-        buttons = [
-            CardAction(
-                type=ActionTypes.message_back, title="coachoutlet.com", text="update",
-            ),
-            CardAction(
-                type=ActionTypes.message_back, title="katespadeoutlet.com", text="update",
-            ),
-        ]
+        region_label_list = utils.getLabel(turn_context.activity.text.split("|")[1])
+        buttons = []
+        for label in region_label_list:
+           buttons.append(CardAction(
+                type=ActionTypes.message_back, title=label, text="update"))
+        
         if isUpdate:
-            await self._send_update_card(turn_context, buttons)
+            await self._send_update_card(turn_context, buttons, titleMsg="Platforms")
         else:
             await self._send_welcome_card(turn_context, buttons, titleMsg="Onboarded Hosts")
             
-    async def _send_incident_card_4xx(self, turn_context: TurnContext, isUpdate):
-        buttons = [
-            CardAction(
-                type=ActionTypes.message_back,
-                title="coachoutlet4xx.com",
-                text="coachoutlet4xx.com",
-            ),
-        ]
-        if isUpdate:
-            await self._send_update_card(turn_context, buttons)
-        else:
-            await self._send_welcome_card(turn_context, buttons, titleMsg="Onboarded Hosts")       
+    # async def _send_incident_card_4xx(self, turn_context: TurnContext, isUpdate):
+    #     buttons = [
+    #         CardAction(
+    #             type=ActionTypes.message_back,
+    #             title="coachoutlet4xx.com",
+    #             text="coachoutlet4xx.com",
+    #         ),
+    #     ]
+    #     if isUpdate:
+    #         await self._send_update_card(turn_context, buttons)
+    #     else:
+    #         await self._send_welcome_card(turn_context, buttons, titleMsg="Onboarded Hosts")       
             
 
     async def _send_welcome_card(self, turn_context: TurnContext, buttons, titleMsg="Welcome"):
@@ -256,7 +298,7 @@ class TeamsConversationBot(TeamsActivityHandler):
             CardAction(type=ActionTypes.message_back, title="15mins", text=path + "|time-15m", ),
             CardAction(type=ActionTypes.message_back, title="30mins", text=path + "|time-30m", ),
             CardAction(type=ActionTypes.message_back, title="1 Hour", text=path + "|time-1h", ),
-            CardAction(type=ActionTypes.message_back, title="4 Hours", text=path + "|time-4h", ),
+            CardAction(type=ActionTypes.message_back, title="4 Hours", text=path + "|time-4h", )
         ]
         await self._send_welcome_card(turn_context, buttons, titleMsg="Please select the timeframe.")
 
