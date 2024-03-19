@@ -1,0 +1,108 @@
+{
+    "type": "AdaptiveCard",
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.2",
+    "body": [{
+            "type": "TextBlock",
+            "text": "Items:",
+            "size": "Medium",
+            "weight": "Bolder"
+        },
+        {
+            "type": "Container",
+            "$data": "${items}",
+            "items": [{
+                    "type": "ColumnSet",
+                    "columns": [{
+                            "type": "Column",
+                            "items": [{
+                                "type": "TextBlock",
+                                "wrap": true,
+                                "text": "${quantity}"
+                            }],
+                            "width": "auto"
+                        },
+                        {
+                            "type": "Column",
+                            "spacing": "Medium",
+                            "items": [{
+                                "type": "TextBlock",
+                                "wrap": true,
+                                "text": "${product.name}"
+                            }],
+                            "width": "stretch"
+                        },
+                        {
+                            "type": "Column",
+                            "items": [{
+                                "type": "TextBlock",
+                                "text": "${cost}",
+                                "wrap": true
+                            }],
+                            "width": "auto"
+                        },
+                        {
+                            "type": "Column",
+                            "id": "chevronDown${product.name}",
+                            "spacing": "Small",
+                            "verticalContentAlignment": "Center",
+                            "items": [{
+                                "type": "Image",
+                                "selectAction": {
+                                    "type": "Action.ToggleVisibility",
+                                    "title": "collapse",
+                                    "targetElements": [
+                                        "${product.name}",
+                                        "chevronUp${product.name}",
+                                        "chevronDown${product.name}"
+                                    ]
+                                },
+                                "url": "https://adaptivecards.io/content/down.png",
+                                "width": "20px",
+                                "altText": "collapsed"
+                            }],
+                            "width": "auto"
+                        },
+                        {
+                            "type": "Column",
+                            "id": "chevronUp${product.name}",
+                            "isVisible": false,
+                            "spacing": "Small",
+                            "verticalContentAlignment": "Center",
+                            "items": [{
+                                "type": "Image",
+                                "selectAction": {
+                                    "type": "Action.ToggleVisibility",
+                                    "title": "expand",
+                                    "targetElements": [
+                                        "${product.name}",
+                                        "chevronUp${product.name}",
+                                        "chevronDown${product.name}"
+                                    ]
+                                },
+                                "url": "https://adaptivecards.io/content/up.png",
+                                "width": "20px",
+                                "altText": "expanded"
+                            }],
+                            "width": "auto"
+                        }
+                    ]
+                },
+                {
+                    "type": "Container",
+                    "id": "${product.name}",
+                    "isVisible": false,
+                    "items": [{
+                        "type": "Container",
+                        "items": [{
+                            "type": "TextBlock",
+                            "isSubtle": true,
+                            "wrap": true,
+                            "text": "${product.description}"
+                        }]
+                    }]
+                }
+            ]
+        }
+    ]
+}

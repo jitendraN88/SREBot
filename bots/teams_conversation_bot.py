@@ -17,6 +17,7 @@ splunk = SplunkOperations()
 utils = Utils()
 ADAPTIVECARDTEMPLATE = "resources/SplunkStats.json"
 GRAPHADAPTIVECARDTEMPLATE = "resources/graph.json"
+STABILITYCARDTEMPLATE = "resources/aggregatedValue.json"
 
 
 # ADAPTIVECARDTEMPLATE = "resources/UserMentionCardTemplate.json"
@@ -41,6 +42,7 @@ class TeamsConversationBot(TeamsActivityHandler):
     async def on_message_activity(self, turn_context: TurnContext):
         TurnContext.remove_recipient_mention(turn_context.activity)
         text = turn_context.activity.text.strip().lower()
+        # print("timeframe is ---"+text)
         # if turn_context.activity.text is not None: text = turn_context.activity.text.strip().lower()
         # else:
         #         text = turn_context.activity.value['action']
@@ -56,14 +58,17 @@ class TeamsConversationBot(TeamsActivityHandler):
             return
 
         if "gettrends" in text:
+            print("get trend is=="+text)
             await self._get_path_statistics_timeframe(turn_context, text)
             return
 
         if text.endswith(".com"):
-            await self._get_path_statistics_timeframe(turn_context, text)
+            # await self._get_path_statistics_timeframe(turn_context, text)
             return
 
-        if ".com" in text and "|time" in text:
+        if "|time" in text:
+            if(os.path.isfile("os.path.isfile(path)")):
+                os.remove("resources/graphnew1.png")
             await self._mention_adaptive_card_activity(turn_context, text)
             await self._get_path_statistics_graph(turn_context,text)
             return
@@ -73,6 +78,7 @@ class TeamsConversationBot(TeamsActivityHandler):
             return
 
         if "update" in text:
+            print("text is---",text)
             await self._send_card(turn_context, False)
             return
 
@@ -104,17 +110,20 @@ class TeamsConversationBot(TeamsActivityHandler):
         return
 
     async def _mention_adaptive_card_activity(self, turn_context: TurnContext, text):
-        card_path = os.path.join(os.getcwd(), ADAPTIVECARDTEMPLATE)
+        
+        trend = str(text).split("|")
+        ch = "stability"
+        
+        if ch in trend[1]:
+            card_path = os.path.join(os.getcwd(), STABILITYCARDTEMPLATE)
+            splunk_result = splunk.desgin_splunk_output_stability(text)
+        else:
+            card_path = os.path.join(os.getcwd(), ADAPTIVECARDTEMPLATE)
+            splunk_result = splunk.desgin_splunk_output(text)
+        
         with open(card_path, "rb") as in_file:
             template_json = json.load(in_file)
-        # template_json["body"][0]["text"] = template_json["body"][0]["text"].replace("${incidentNumber}", incident)
-
-        splunk_result = splunk.desgin_splunk_output(text)
         
-        # template_json["body"][0]["text"] = template_json["body"][0]["text"].replace("${incidentNumber}", incident)
-        # template_json["body"][0]["text"] = template_json["body"][0]["text"].replace("${status}", splunk_result["status"])
-        # template_json["body"][0]["text"] = template_json["body"][0]["text"].replace("${time}", splunk_result["startTime"])
-        # template_json["body"][0]["text"] = template_json["body"][0]["text"].replace("${maxCount}", str(splunk_result["maxCount"]))
         template_json['body'][0]["rows"] = template_json['body'][0]["rows"] + splunk_result["message"]
         adaptive_card_attachment = Activity(
             text="",
@@ -153,15 +162,16 @@ class TeamsConversationBot(TeamsActivityHandler):
             await self._send_welcome_card(turn_context, buttons)
     
     async def _send_card(self, turn_context: TurnContext, isUpdate):
+        text = turn_context.activity.text.split("|")[1]
         buttons = [
             CardAction(
-                type=ActionTypes.message_back, title="Akamai", text="getincidenttrends|Akamai"
+                type=ActionTypes.message_back, title="Akamai", text="getincidenttrends|Akamai|"+text
             ),
             CardAction(
-                type=ActionTypes.message_back, title="Moovweb", text="getincidenttrends|Moovweb"
+                type=ActionTypes.message_back, title="Moovweb", text="getincidenttrends|Moovweb|"+text
             ),
             CardAction(
-                type=ActionTypes.message_back, title="SFCC", text="getincidenttrends|SFCC"
+                type=ActionTypes.message_back, title="SFCC", text="getincidenttrends|SFCC|"+text
             ),
         ]
         if isUpdate:
@@ -170,21 +180,25 @@ class TeamsConversationBot(TeamsActivityHandler):
             await self._send_welcome_card(turn_context, buttons, titleMsg="Hosts")
 
     async def _send_incident_card_trends(self, turn_context: TurnContext, isUpdate):
-        trend_name = turn_context.activity.text.split("|")[1]
+        _context = turn_context.activity.text
+        trend_name = _context.split("|")[1]
         buttons = []
         if trend_name == 'Akamai':
-         buttons = [
+            path = utils.getRequestPath(_context.split("|")[2])
+            request_path = path['Request_host']
+            print("path data is----"+request_path)
+            buttons = [
             CardAction(
-                type=ActionTypes.message_back, title="Stability", text="gettrends"
+                type=ActionTypes.message_back, title="Stability", text="gettrends|"+request_path+"|Stability"
             ),
             CardAction(
-                type=ActionTypes.message_back, title="Errors (4XX)", text="gettrends"
+                type=ActionTypes.message_back, title="Errors (4XX)", text="gettrends|"+request_path+"|Errors (4XX)"
             ),
             CardAction(
-                type=ActionTypes.message_back, title="Errors (5XX)", text="gettrends"
+                type=ActionTypes.message_back, title="Errors (5XX)", text="gettrends|"+request_path+"|Errors (5XX)"
             ),
             CardAction(
-                type=ActionTypes.message_back, title="Maintenance Page Trend", text="gettrends"
+                type=ActionTypes.message_back, title="Maintenance Page Trend", text="gettrends|"+request_path+"|Maintenance Page Trend"
             )
          ]
         elif trend_name == 'Moovweb':
@@ -232,11 +246,12 @@ class TeamsConversationBot(TeamsActivityHandler):
             await self._send_welcome_card(turn_context, buttons, titleMsg="Show Incident Trends")
 
     async def _send_incident_card(self, turn_context: TurnContext, isUpdate):
+        region_slected_text= turn_context.activity.text.split("|")[1]
         region_label_list = utils.getLabel(turn_context.activity.text.split("|")[1])
         buttons = []
         for label in region_label_list:
            buttons.append(CardAction(
-                type=ActionTypes.message_back, title=label, text="update"))
+                type=ActionTypes.message_back, title=label, text="update|"+label+"|"+region_slected_text))
         
         if isUpdate:
             await self._send_update_card(turn_context, buttons, titleMsg="Platforms")
@@ -294,11 +309,15 @@ class TeamsConversationBot(TeamsActivityHandler):
         await turn_context.update_activity(updated_activity)
 
     async def _get_path_statistics_timeframe(self, turn_context: TurnContext, path):
+        # path_value = path[0]['Request_host']
+        path_arr= turn_context.activity.text.split("|")
+        print("path value is=="+path_arr[1])
+        # print("path value is====="+path_arr[2])
         buttons = [
-            CardAction(type=ActionTypes.message_back, title="15mins", text=path + "|time-15m", ),
-            CardAction(type=ActionTypes.message_back, title="30mins", text=path + "|time-30m", ),
-            CardAction(type=ActionTypes.message_back, title="1 Hour", text=path + "|time-1h", ),
-            CardAction(type=ActionTypes.message_back, title="4 Hours", text=path + "|time-4h", )
+            CardAction(type=ActionTypes.message_back, title="15mins", text=path[1]+"|"+path_arr[2] + "|time-15m"),
+            CardAction(type=ActionTypes.message_back, title="30mins", text=path[1]+"|"+path_arr[2]  + "|time-30m"),
+            CardAction(type=ActionTypes.message_back, title="1 Hour", text=path[1]+"|"+path_arr[2]  + "|time-1h"),
+            CardAction(type=ActionTypes.message_back, title="4 Hours", text=path[1]+"|"+path_arr[2]  + "|time-4h")
         ]
         await self._send_welcome_card(turn_context, buttons, titleMsg="Please select the timeframe.")
 

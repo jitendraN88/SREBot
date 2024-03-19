@@ -21,7 +21,7 @@
                             "items": [
                                 {
                                     "type": "TextBlock",
-                                    "text": "Aggregated Value",
+                                    "text": "Stability",
                                     "wrap": true
                                 }
                             ],

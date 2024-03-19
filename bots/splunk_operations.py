@@ -20,12 +20,32 @@ class SplunkOperations():
             splunkToken=self._splunk_token
         )
         return service
-
-    def splunk_oneshotsearch(self,text):
-        print("text data is ---"+text)
-        path_uri, timeperiod = str(text).split('|time')
+    
+    def splunk_oneshotaggregatedsearch(self,text):
+        timeperiod = text[2].split("time")[1]
         service = self.get_splunk_service()
         # Search query
+        trend = text[1]
+        search_query = """search index="akamai" sourcetype="akamai" Request_host="www.coachoutlet.com"   NOT("3.18.82.183" OR "107.204.21.178") NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json" OR Request_path="images/common/favicon2.ico" OR Request_path= "*/Product-Variation" OR Request_path="sw" OR Client_IP="43.153.65.191" OR Status_code="480" OR Status_code="481" OR User_agent="Screaming%20Frog%20SEO%20Spider*" OR Request_path="*.gif" OR User_agent="axios*" OR Status_code="412")
+| stats count AS total, count(eval(like(Status_code, "2%"))) AS success2xx , count(eval(like(Status_code, "3%"))) AS success3xx, count(eval(like(Status_code, "5%"))) AS count_5xx, count(eval(like(Status_code, "4%"))) AS count_4xx 
+| eval Stability=(((success2xx+success3xx)/total)*100)
+| fields Stability
+"""
+        kwargs_oneshot = {
+            "earliest_time": timeperiod,
+            "latest_time": "now",
+            "output_mode": 'json'
+        }
+        oneshotsearch_results = service.jobs.oneshot(search_query, **kwargs_oneshot)
+        result = results.JSONResultsReader(oneshotsearch_results)
+        return result
+
+    def splunk_oneshotsearch(self,text):
+        timeperiod = text[2].split("time")[1]
+        service = self.get_splunk_service()
+        # Search query
+        trend = text[1]
+        print("text data is ---------"+trend)
         search_query = """search index="akamai" sourcetype="akamai" Status_code=* Client_IP=* NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json") Request_path="*" NOT (Request_path="*.gif") Status_code!="412" Request_host IN ("www.coachoutlet.com") 
 | stats count as TotalCount,count(eval(Status_code>199 AND Status_code<400)) as Success_Count,count(eval(Status_code>399)) as Failure_Count, count(eval(Status_code>399 AND Status_code < 500 )) as Count_4XX, count(eval(Status_code >= 500 )) as Count_5XX by Request_path 
 | table Request_path, TotalCount,Success_Count,Failure_Count, Count_4XX, Count_5XX 
@@ -46,12 +66,26 @@ class SplunkOperations():
         return result
 
     def splunk_oneshotsearch_path_graph(self,text):
+       
         path_uri, timeperiod = str(text).split('|time')
         service = self.get_splunk_service()
-        # Search query
-        search_query = """search index="akamai" sourcetype="akamai" Request_host IN ("*") Status_code>499 NOT (Request_path="*.gif") NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json")
-| timechart span=5m count by Request_path useother=f usenull=f limit=5
-        """
+        
+        trend = path_uri.split("|")
+        ch = "stability"
+        y_axis = "5xx Count"
+        
+        if(ch in trend[1]):
+            print("graph text is=1=",path_uri)
+            y_axis = "Stability"
+            search_query = """search index="akamai" sourcetype="akamai" Request_host IN ("www.coachoutlet.com" ) Status_code!="412" ,
+| bin span=5m _time | stats count AS total, count(eval(like(Status_code, "2%"))) AS success2xx , count(eval(like(Status_code, "3%"))) AS success3xx by _time
+| eval Stability=round(((success2xx+success3xx)/total)*100,3) 
+| timechart span=5m avg(Stability) as stability"""
+        else:
+            print("graph text is=2=",path_uri)
+            search_query = """search index="akamai" sourcetype="akamai" Request_host IN ("*") Status_code>499 NOT (Request_path="*.gif") NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json")
+| timechart span=5m count by Request_path useother=f usenull=f limit=10"""
+        
         kwargs_oneshot = {
             "earliest_time": timeperiod,
             "latest_time": "now",
@@ -60,6 +94,7 @@ class SplunkOperations():
         oneshotsearch_results = service.jobs.oneshot(search_query, **kwargs_oneshot)
         # print("oneshotsearch_results is ----"+oneshotsearch_results)
         result = results.JSONResultsReader(oneshotsearch_results)
+        print("result size is",result)
         data = []
         for item in result:
             data.append(item)
@@ -73,7 +108,7 @@ class SplunkOperations():
                 if path == "_time":
                     sdata[path].append(str(row[path]).split('T')[1].split('.')[0][:-3])
                 else:
-                    sdata[path].append(int(row[path]))
+                    sdata[path].append(int(float(row[path])))
 
         timeslots = sdata.pop('_time')
         
@@ -82,9 +117,9 @@ class SplunkOperations():
         for uri in sdata:
             plt.plot(timeslots, sdata[uri], label=uri)
         plt.xlabel("Time")
-        plt.ylabel("5xx Count")
+        plt.ylabel(y_axis)
         plt.legend()
-        plt.title('5xx Error Stats')
+        plt.title(y_axis)
         figure = plt.gcf()
         figure.set_size_inches(10, 8)
         graph_path = os.path.join(os.getcwd(), GRAPHADAPTIVECARDIMAGEPATH)
@@ -93,10 +128,37 @@ class SplunkOperations():
         del plt
         data_uri = create_data_URI(imagepath=graph_path)
         return data_uri
+    
+    def desgin_splunk_output_stability(self, timeslot):
+        timeslot_new = timeslot.split("|")
+        result = self.splunk_oneshotaggregatedsearch(timeslot_new)
+        message = []
+        for line in result:
+            if isinstance(line, dict):
+                new_row = {
+                    'type': 'TableRow',
+                    'cells': [
+                        {
+                            'type': 'TableCell',
+                            'items': [
+                                {
+                                    'type': 'TextBlock',
+                                    'text': line["Stability"],
+                                    'wrap': True
+                                }
+                            ],
+                            'style': 'accent'
+                        }
+                    ]
+                }
+                message.append(new_row)
+        return dict(message=message)
 
     def desgin_splunk_output(self, timeslot):
         global status, startTime
-        result = self.splunk_oneshotsearch(timeslot)
+        timeslot_new = timeslot.split("|")
+        print("timeslot is===="+timeslot_new[1])
+        result = self.splunk_oneshotsearch(timeslot_new)
         message = []
         data = {}
         for line in result:
@@ -193,8 +255,6 @@ class SplunkOperations():
                 }
             )
             
-        
-        print("time and value is==="+data)
         graph_path = os.path.join(os.getcwd(), GRAPHADAPTIVECARDIMAGEPATH)
         data_uri_graph = create_graph(title="{} 5xx Error Stats for {}".format(path_uri,timeperiod), xpoints=list(data.keys()),
                      ypoints=list(data.values()))
