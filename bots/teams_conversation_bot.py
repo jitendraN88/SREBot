@@ -12,6 +12,7 @@ from botbuilder.schema.teams import TeamInfo, TeamsChannelAccount
 from botbuilder.schema._connector_client_enums import ActionTypes
 from .splunk_operations import SplunkOperations 
 from .utils import Utils
+import asyncio
 
 splunk = SplunkOperations()
 utils = Utils()
@@ -69,8 +70,10 @@ class TeamsConversationBot(TeamsActivityHandler):
         if "|time" in text:
             if(os.path.isfile("os.path.isfile(path)")):
                 os.remove("resources/graphnew1.png")
-            await self._mention_adaptive_card_activity(turn_context, text)
-            await self._get_path_statistics_graph(turn_context,text)
+                
+            await self.async_func(turn_context, text)
+            # await self._mention_adaptive_card_activity(turn_context, text)
+            # await self._get_path_statistics_graph(turn_context,text)
             return
 
         if "mention" in text:
@@ -109,7 +112,12 @@ class TeamsConversationBot(TeamsActivityHandler):
         await self._send_select_region_card(turn_context, False)
         return
 
+    async def async_func(self, turn_context:TurnContext, text):
+        await self._mention_adaptive_card_activity(turn_context, text)
+        await self._get_path_statistics_graph(turn_context,text)
+    
     async def _mention_adaptive_card_activity(self, turn_context: TurnContext, text):
+        print("search path 00 is:",text)
         
         trend = str(text).split("|")
         ch = "stability"
@@ -311,17 +319,18 @@ class TeamsConversationBot(TeamsActivityHandler):
     async def _get_path_statistics_timeframe(self, turn_context: TurnContext, path):
         # path_value = path[0]['Request_host']
         path_arr= turn_context.activity.text.split("|")
-        print("path value is=="+path_arr[1])
-        # print("path value is====="+path_arr[2])
+        print("path value is 0=="+path_arr[1])
+        print("path value is====="+path_arr[2])
         buttons = [
-            CardAction(type=ActionTypes.message_back, title="15mins", text=path[1]+"|"+path_arr[2] + "|time-15m"),
-            CardAction(type=ActionTypes.message_back, title="30mins", text=path[1]+"|"+path_arr[2]  + "|time-30m"),
-            CardAction(type=ActionTypes.message_back, title="1 Hour", text=path[1]+"|"+path_arr[2]  + "|time-1h"),
-            CardAction(type=ActionTypes.message_back, title="4 Hours", text=path[1]+"|"+path_arr[2]  + "|time-4h")
+            CardAction(type=ActionTypes.message_back, title="15mins", text=path_arr[1]+"|"+path_arr[2] + "|time-15m"),
+            CardAction(type=ActionTypes.message_back, title="30mins", text=path_arr[1]+"|"+path_arr[2]  + "|time-30m"),
+            CardAction(type=ActionTypes.message_back, title="1 Hour", text=path_arr[1]+"|"+path_arr[2]  + "|time-1h"),
+            CardAction(type=ActionTypes.message_back, title="4 Hours", text=path_arr[1]+"|"+path_arr[2]  + "|time-4h")
         ]
         await self._send_welcome_card(turn_context, buttons, titleMsg="Please select the timeframe.")
 
     async def _get_path_statistics_graph(self, turn_context: TurnContext, path):
+        print("search path 0 is:",path)
         card_path = os.path.join(os.getcwd(), GRAPHADAPTIVECARDTEMPLATE)
         with open(card_path, "rb") as in_file:
             template_json = json.load(in_file)

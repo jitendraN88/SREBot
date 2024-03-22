@@ -1,0 +1,19 @@
+﻿platforms,trends,search_query,graph_query
+Akamai,Stability,"search index=""akamai"" sourcetype=""akamai"" Request_host={request_host}   NOT(""3.18.82.183"" OR ""107.204.21.178"") NOT (Request_path=""*sureRoute*"" OR Request_path=""*akamai%2ftestObject*"" OR Request_path=""*.js"" OR Request_path=""*.png"" OR Request_path=""*.css"" OR Request_path=""*.jpg"" OR Request_path=""*.svg"" OR Request_path=""icons/favicon.ico"" OR Request_path=""*.json"" OR Request_path=""*Analytics-Start*"" OR Request_path=""*on/demandware.static*"" OR Request_path="".well-known/assetlinks.json"" OR Request_path=""images/common/favicon2.ico"" OR Request_path= ""*/Product-Variation"" OR Request_path=""sw"" OR Client_IP=""43.153.65.191"" OR Status_code=""480"" OR Status_code=""481"" OR User_agent=""Screaming%20Frog%20SEO%20Spider*"" OR Request_path=""*.gif"" OR User_agent=""axios*"" OR Status_code=""412"")
+| stats count AS total, count(eval(like(Status_code, ""2%""))) AS success2xx , count(eval(like(Status_code, ""3%""))) AS success3xx, count(eval(like(Status_code, ""5%""))) AS count_5xx, count(eval(like(Status_code, ""4%""))) AS count_4xx 
+| eval Stability=(((success2xx+success3xx)/total)*100)","search index={request_host} sourcetype=""akamai"" Request_host IN ({request_host} ) Status_code!=""412"" ,
+| bin span={} _time | stats count AS total, count(eval(like(Status_code, ""2%""))) AS success2xx , count(eval(like(Status_code, ""3%""))) AS success3xx by _time
+| eval Stability=round(((success2xx+success3xx)/total)*100,3) 
+| timechart span={time_span} avg(Stability) as stability"
+Akamai,Errors (4XX),,
+Akamai,Errors (5XX),"search index=""akamai"" sourcetype=""akamai"" Status_code=* Client_IP=* NOT (Request_path=""*sureRoute*"" OR Request_path=""*akamai%2ftestObject*"" OR Request_path=""*.js"" OR Request_path=""*.png"" OR Request_path=""*.css"" OR Request_path=""*.jpg"" OR Request_path=""*.svg"" OR Request_path=""icons/favicon.ico"" OR Request_path=""*.json"" OR Request_path=""*Analytics-Start*"" OR Request_path=""*on/demandware.static*"" OR Request_path="".well-known/assetlinks.json"") Request_path=""*"" NOT (Request_path=""*.gif"") Status_code!=""412"" Request_host IN ({request_host}) 
+| stats count as TotalCount,count(eval(Status_code>199 AND Status_code<400)) as Success_Count,count(eval(Status_code>399)) as Failure_Count, count(eval(Status_code>399 AND Status_code < 500 )) as Count_4XX, count(eval(Status_code >= 500 )) as Count_5XX by Request_path 
+| table Request_path, TotalCount,Success_Count,Failure_Count, Count_4XX, Count_5XX 
+| sort -TotalCount 
+| eval Failure_Ratio(%)=round((Failure_Count/(Failure_Count+Success_Count))*100,2) 
+| eval Failure_Ratio_4XX(%)=round((Count_4XX/(Failure_Count+Success_Count))*100,2) 
+| eval Failure_Ratio_5XX(%)=round((Count_5XX/(Failure_Count+Success_Count))*100,2) 
+| where Count_5XX>0
+| sort -Failure_Ratio(%) , -Failure_Ratio_5XX(%) limit=10","search index=""akamai"" sourcetype=""akamai"" Request_host IN (""*"") Status_code>499 NOT (Request_path=""*.gif"") NOT (Request_path=""*sureRoute*"" OR Request_path=""*akamai%2ftestObject*"" OR Request_path=""*.js"" OR Request_path=""*.png"" OR Request_path=""*.css"" OR Request_path=""*.jpg"" OR Request_path=""*.svg"" OR Request_path=""icons/favicon.ico"" OR Request_path=""*.json"" OR Request_path=""*Analytics-Start*"" OR Request_path=""*on/demandware.static*"" OR Request_path="".well-known/assetlinks.json"")
+| timechart span={time_span} count by Request_path useother=f usenull=f limit=10"
+Akamai,Maintenance Page Trend,,

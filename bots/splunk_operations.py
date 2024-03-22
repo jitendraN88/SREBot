@@ -22,17 +22,18 @@ class SplunkOperations():
         return service
     
     def splunk_oneshotaggregatedsearch(self,text):
-        timeperiod = text[2].split("time")[1]
+        path,time = str(text).split("|time")
+        print("request host is:"+path[0])
+        request_host = text.split("|")[0]
         service = self.get_splunk_service()
         # Search query
         trend = text[1]
-        search_query = """search index="akamai" sourcetype="akamai" Request_host="www.coachoutlet.com"   NOT("3.18.82.183" OR "107.204.21.178") NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json" OR Request_path="images/common/favicon2.ico" OR Request_path= "*/Product-Variation" OR Request_path="sw" OR Client_IP="43.153.65.191" OR Status_code="480" OR Status_code="481" OR User_agent="Screaming%20Frog%20SEO%20Spider*" OR Request_path="*.gif" OR User_agent="axios*" OR Status_code="412")
-| stats count AS total, count(eval(like(Status_code, "2%"))) AS success2xx , count(eval(like(Status_code, "3%"))) AS success3xx, count(eval(like(Status_code, "5%"))) AS count_5xx, count(eval(like(Status_code, "4%"))) AS count_4xx 
-| eval Stability=(((success2xx+success3xx)/total)*100)
-| fields Stability
-"""
+        search_query = """index="akamai" sourcetype="akamai" Request_host IN ({request_path}) NOT("3.18.82.183" OR "107.204.21.178") NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json" OR Request_path="images/common/favicon2.ico" OR Request_path= "*/Product-Variation" OR Request_path="sw" OR Client_IP="43.153.65.191" OR Status_code="480" OR Status_code="481" OR User_agent="Screaming%20Frog%20SEO%20Spider*" OR Request_path="*.gif" OR User_agent="axios*" OR Status_code="412") 
+| stats count AS total, count(eval(like(Status_code, "2%"))) AS success2xx , count(eval(like(Status_code, "3%"))) AS success3xx 
+| eval Stability=(((success2xx+success3xx)/total)*100) 
+| fields Stability""".format(request_path= request_host)
         kwargs_oneshot = {
-            "earliest_time": timeperiod,
+            "earliest_time": time,
             "latest_time": "now",
             "output_mode": 'json'
         }
@@ -41,12 +42,16 @@ class SplunkOperations():
         return result
 
     def splunk_oneshotsearch(self,text):
-        timeperiod = text[2].split("time")[1]
+        
+        path, timeperiod = str(text).split("|time")
+        print("time period is 00:",path.split('|')[0])
+        print("time period is 00:",timeperiod)
+        request_host = path.split('|')[0]
         service = self.get_splunk_service()
         # Search query
-        trend = text[1]
-        print("text data is ---------"+trend)
-        search_query = """search index="akamai" sourcetype="akamai" Status_code=* Client_IP=* NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json") Request_path="*" NOT (Request_path="*.gif") Status_code!="412" Request_host IN ("www.coachoutlet.com") 
+        # trend = text[1]
+        # print("text data is ---------"+trend)
+        search_query = """search index="akamai" sourcetype="akamai" Status_code=* Client_IP=* NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json") Request_path="*" NOT (Request_path="*.gif") Status_code!="412" Request_host IN ({request_path}) 
 | stats count as TotalCount,count(eval(Status_code>199 AND Status_code<400)) as Success_Count,count(eval(Status_code>399)) as Failure_Count, count(eval(Status_code>399 AND Status_code < 500 )) as Count_4XX, count(eval(Status_code >= 500 )) as Count_5XX by Request_path 
 | table Request_path, TotalCount,Success_Count,Failure_Count, Count_4XX, Count_5XX 
 | sort -TotalCount 
@@ -54,8 +59,7 @@ class SplunkOperations():
 | eval Failure_Ratio_4XX(%)=round((Count_4XX/(Failure_Count+Success_Count))*100,2) 
 | eval Failure_Ratio_5XX(%)=round((Count_5XX/(Failure_Count+Success_Count))*100,2) 
 | where Count_5XX>0
-| sort -Failure_Ratio(%) , -Failure_Ratio_5XX(%) limit=10
-"""
+| sort -Failure_Ratio(%) , -Failure_Ratio_5XX(%) limit=10""".format(request_path=request_host)
         kwargs_oneshot = {
             "earliest_time": timeperiod,
             "latest_time": "now",
@@ -66,25 +70,36 @@ class SplunkOperations():
         return result
 
     def splunk_oneshotsearch_path_graph(self,text):
+        print("search path is:",text)
+        request_host = text.split("|")[0]
        
         path_uri, timeperiod = str(text).split('|time')
-        service = self.get_splunk_service()
         
+        if timeperiod=='-15m':
+            span_value = '1m'
+        elif timeperiod=='-30m':
+            span_value = '5m'
+        elif timeperiod=='-1h':
+            span_value = '5m'
+        elif timeperiod=='-4h':
+            span_value = '15m'
+            
+        service = self.get_splunk_service()
         trend = path_uri.split("|")
-        ch = "stability"
+        # ch = "stability"
         y_axis = "5xx Count"
         
-        if(ch in trend[1]):
-            print("graph text is=1=",path_uri)
+        if("stability" in trend[1]):
             y_axis = "Stability"
-            search_query = """search index="akamai" sourcetype="akamai" Request_host IN ("www.coachoutlet.com" ) Status_code!="412" ,
-| bin span=5m _time | stats count AS total, count(eval(like(Status_code, "2%"))) AS success2xx , count(eval(like(Status_code, "3%"))) AS success3xx by _time
-| eval Stability=round(((success2xx+success3xx)/total)*100,3) 
-| timechart span=5m avg(Stability) as stability"""
+            search_query = """search index="akamai" sourcetype="akamai" Request_host IN ({request_path}) NOT("3.18.82.183" OR "107.204.21.178") NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json" OR Request_path="images/common/favicon2.ico" OR Request_path= "*/Product-Variation" OR Request_path="sw" OR Client_IP="43.153.65.191" OR Status_code="480" OR Status_code="481" OR User_agent="Screaming%20Frog%20SEO%20Spider*" OR Request_path="*.gif" OR User_agent="axios*" OR Status_code="412") Status_code!="412" ,
+| bin span={span_time} _time | stats count AS total, count(eval(like(Status_code, "2%"))) AS success2xx , count(eval(like(Status_code, "3%"))) AS success3xx by _time
+| eval Stability=(((success2xx+success3xx)/total)*100) 
+| timechart span={span_time} avg(Stability) as stability""".format(request_path=request_host, span_time=span_value)
         else:
-            print("graph text is=2=",path_uri)
-            search_query = """search index="akamai" sourcetype="akamai" Request_host IN ("*") Status_code>499 NOT (Request_path="*.gif") NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json")
-| timechart span=5m count by Request_path useother=f usenull=f limit=10"""
+            search_query = """search index="akamai" sourcetype="akamai" Request_host IN ({request_path}) NOT("3.18.82.183" OR "107.204.21.178") NOT (Request_path="*sureRoute*" OR Request_path="*akamai%2ftestObject*" OR Request_path="*.js" OR Request_path="*.png" OR Request_path="*.css" OR Request_path="*.jpg" OR Request_path="*.svg" OR Request_path="icons/favicon.ico" OR Request_path="*.json" OR Request_path="*Analytics-Start*" OR Request_path="*on/demandware.static*" OR Request_path=".well-known/assetlinks.json" OR Request_path="images/common/favicon2.ico" OR Request_path= "*/Product-Variation" OR Request_path="sw" OR Client_IP="43.153.65.191" OR Status_code="480" OR Status_code="481" OR User_agent="Screaming%20Frog%20SEO%20Spider*" OR Request_path="*.gif" OR User_agent="axios*" OR Status_code="412"),
+| bin span={span_time} _time | stats count AS total, count(eval(like(Status_code, "5%"))) AS error_5xx  by _time
+| eval 5xxerror=(((error_5xx)/total)*100) 
+| timechart span={span_time} avg(5xxerror) as 5xx_error""".format(request_path=request_host, span_time=span_value)
         
         kwargs_oneshot = {
             "earliest_time": timeperiod,
@@ -94,7 +109,7 @@ class SplunkOperations():
         oneshotsearch_results = service.jobs.oneshot(search_query, **kwargs_oneshot)
         # print("oneshotsearch_results is ----"+oneshotsearch_results)
         result = results.JSONResultsReader(oneshotsearch_results)
-        print("result size is",result)
+        
         data = []
         for item in result:
             data.append(item)
@@ -105,17 +120,23 @@ class SplunkOperations():
 
         for row in data:
             for path in paths:
+                print("path path data is0-",path)
                 if path == "_time":
                     sdata[path].append(str(row[path]).split('T')[1].split('.')[0][:-3])
                 else:
-                    sdata[path].append(int(float(row[path])))
+                    sdata[path].append(float(row[path]))
+                    print("sdata sdata data is0-",path)
 
         timeslots = sdata.pop('_time')
         
         import matplotlib.pylab as plt
         
+        plt.clf()
         for uri in sdata:
-            plt.plot(timeslots, sdata[uri], label=uri)
+            print("timeslots timeslots data is0-",timeslots)
+            print("sdata sdata data is0-",sdata[uri])
+            print("uri uri data is0-",uri)
+            plt.plot(timeslots, sdata[uri], label=str(uri))
         plt.xlabel("Time")
         plt.ylabel(y_axis)
         plt.legend()
@@ -131,9 +152,12 @@ class SplunkOperations():
     
     def desgin_splunk_output_stability(self, timeslot):
         timeslot_new = timeslot.split("|")
-        result = self.splunk_oneshotaggregatedsearch(timeslot_new)
+        print("request host is000:",timeslot)
+        result = self.splunk_oneshotaggregatedsearch(timeslot)
+        
         message = []
         for line in result:
+            print("request host is00:",line)
             if isinstance(line, dict):
                 new_row = {
                     'type': 'TableRow',
@@ -156,12 +180,12 @@ class SplunkOperations():
 
     def desgin_splunk_output(self, timeslot):
         global status, startTime
-        timeslot_new = timeslot.split("|")
-        print("timeslot is===="+timeslot_new[1])
-        result = self.splunk_oneshotsearch(timeslot_new)
+        # timeslot_new = timeslot.split("|")
+        result = self.splunk_oneshotsearch(timeslot)
         message = []
         data = {}
         for line in result:
+            print("line data is--",line)
             if isinstance(line, dict):
                 new_row = {
                     'type': 'TableRow',
